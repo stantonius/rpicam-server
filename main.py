@@ -1,5 +1,5 @@
 from picamera2 import Picamera2, Preview
-from picamera2.encoders import Encoder, H264Encoder, MultiEncoder, 
+from picamera2.encoders import Encoder, H264Encoder
 from picamera2.outputs import FileOutput, FfmpegOutput
 import socket, time, pickle, struct
 import cv2
@@ -23,9 +23,10 @@ try:
         print(f"connection accepted, addr: {addr}, conn: {conn}")
 
         stream = conn.makefile("wb")
-        picam2.encoder.output = FileOutput(stream)
+        # picam2.encoder.output = FfmpegOutput(stream)
+        picam2.encoder.output = FfmpegOutput("test.mp4")
         picam2.start_encoder()
-        # picam2.start()
+        picam2.start()
 
         print(sock.getsockname())
         time.sleep(60)

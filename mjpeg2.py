@@ -1,6 +1,6 @@
 from picamera2 import Picamera2
-from picamera2.encoders import JpegEncoder
-from picamera2.outputs import FileOutput
+from picamera2.encoders import JpegEncoder, H264Encoder
+from picamera2.outputs import FileOutput, FfmpegOutput, Output
 import io
 import logging
 import socketserver
@@ -42,8 +42,10 @@ class StreamingServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 picam2 = Picamera2()
-picam2.configure(picam2.video_configuration(main={"size": (640, 480)}))
+picam2.configure(picam2.video_configuration())
+
 output = StreamingOutput()
+# picam2.start_recording(H264Encoder(100000), FfmpegOutput(output))
 picam2.start_recording(JpegEncoder(), FileOutput(output))
 
 try:
