@@ -2,8 +2,11 @@ from vidgear.gears import NetGear
 from picamera2 import Picamera2, MappedArray
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import FfmpegOutput
+from picamera2.request import CompletedRequest
 import libcamera
 import pickle, cv2, time
+from datetime import datetime
+import numpy as np
 
 picam2 = Picamera2()
 
@@ -49,13 +52,16 @@ scale = 1
 thickness = 2
 
 def apply_timestamp(request):
-    timestamp = time.strftime("%Y-%m-%d %X")
-    with MappedArray(request, "main") as m:
+    # timestamp = time.strftime("%Y-%m-%d %X")
+    timestamp="Hiiiiiiiiiiiiiiii"
+    with MappedArray(request, "lores") as m:
         cv2.putText(m.array, timestamp, origin, font, scale, colour, thickness)
 
-picam2.request_callback = apply_timestamp
+# picam2.request_callback = apply_timestamp
 
-
+# setup for image stills
+w, h = lsize
+prev = None 
 
 # final setup - encodings, output, and start
 
@@ -65,45 +71,50 @@ picam2.start_recording(encoder, output)
 
 while True:
     try:
-        frame = picam2.capture_array()[:,:,:3]
-        
-
+        frame = picam2.capture_array("lores")
 
         if frame is None:
             break
 
-        recv_data = server.send(frame)
+        # 1. process frame to image and send
+        timestamp = time.strftime("%Y-%m-%d %X")
+        img = cv2.cvtColor(frame, cv2.COLOR_YUV420p2RGB)
+        img = cv2.putText(img, timestamp, origin, font, scale, colour, thickness)
+        # recv_data = server.send(frame)
 
-        # cur = picam2.capture_buffer("lores")
+        # 2. use frame to look for motion
+        # see https://towardsdatascience.com/image-analysis-for-beginners-creating-a-motion-detector-with-opencv-4ca6faba4b42
+        processed_frame = cv2.cvtColor(frame, cv2.COLOR_YUV420p2GRAY)  #greyscale
+        if prev is not None:
+            diff_frame = cv2.absdiff(src1=processed_frame, src2=prev)
+            
+            # dilute the image to exagerate the differences
+            kernel = np.ones((5, 5))
+            diff_frame = cv2.dilate(diff_frame, kernel, 1)
+
+            # Only take different areas that are different enough (>20 / 255)
+            thresh_frame = cv2.threshold(src=diff_frame, thresh=20, maxval=255, type=cv2.THRESH_BINARY)[1]
+
+            #TODO: replace below with conditional image write if number of pixels > certain threshold
+            recv_data = server.send(cv2.cvtColor(thresh_frame, cv2.COLOR_GRAY2RGB))
+        prev = processed_frame
+
+
         # cur = cur[:w*h].reshape(h, w)
         # if prev is not None:
         #     # Measure pixels differences between current and
         #     # previous frame
-        #     mse = np.square(np.subtract(cur, prev)).mean()
+            
+        #     prepared_frame = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+
+        #     mse = np.square(np.subtract(frame, prev)).mean()
         #     if mse > 7:
-        #         if not encoding:
-        #             encoder.output = FileOutput("{}.h264".format(int(time.time())))
-        #             picam2.start_encoder()
-        #             encoding = True
-        #             print("New Motion", mse)
-        #         ltime = time.time()
-        #     else:
-        #         if encoding and time.time() - ltime > 2.0:
-        #             picam2.stop_encoder()
-        #             encoding = False
-        # prev = cur
+        #         request = picam2.capture_request()
+        #         request.save("main", f"snaps/{str(datetime.now())}.jpg")
+        #         request.release()
+        #         print("Still image captured!")
 
-        # check if valid data recieved
-        if not (recv_data is None):
-            # extract unique port address and its respective data
-            unique_address, data = recv_data
-            # update the extracted data in the data dictionary
-            data_dict[unique_address] = data
-
-        if data_dict:
-            # print data just received from Client(s)
-            for key, value in data_dict.items():
-                print("Client at port {} said: {}".format(key, value))
+        # prev = frame
 
     except KeyboardInterrupt:
         break
