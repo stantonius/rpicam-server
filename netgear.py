@@ -4,17 +4,19 @@ from picamera2.encoders import H264Encoder
 from picamera2.outputs import FfmpegOutput
 from picamera2.request import CompletedRequest
 import libcamera
-import pickle, cv2, time
+import pickle, cv2, time, os, dotenv
 from datetime import datetime
 import numpy as np
+
+load_dotenv()
 
 picam2 = Picamera2()
 
 # netgear server setup
 
 options = {
-    "address": "10.0.0.226",
-    "port": "5454",
+    "address": os.environ["CLIENT_IP"],
+    "port": os.environ["CLIENT_PORT"],
     "protocol": "tcp",
     "logging": True,
     "pattern": 1
