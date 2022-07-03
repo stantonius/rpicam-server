@@ -4,7 +4,8 @@ from picamera2.encoders import H264Encoder
 from picamera2.outputs import FfmpegOutput
 from picamera2.request import CompletedRequest
 import libcamera
-import pickle, cv2, time, os, dotenv
+import pickle, cv2, time, os
+from dotenv import load_dotenv
 from datetime import datetime
 import numpy as np
 

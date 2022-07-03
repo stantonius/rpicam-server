@@ -17,3 +17,4 @@ sudo apt install -y opencv-data
 # dependencies for the camera setup
 pip install uvloop
 pip install -U vidgear[asyncio]
+pip install python-dotenv
