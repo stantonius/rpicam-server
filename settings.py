@@ -13,7 +13,8 @@ netgear_options = {
     "port": os.environ["CLIENT_PORT"],
     "protocol": "tcp",
     "logging": True,
-    "pattern": 1
+    "pattern": 1,
+    "source": None
 }
 
 # PICAM CONFIG
@@ -54,4 +55,3 @@ text_config = {
 
 # setup for image stills
 # w, h = lsize
-prev = None
