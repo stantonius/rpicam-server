@@ -3,8 +3,9 @@ from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import FfmpegOutput
 import cv2, time, asyncio
-from datetime import datetime
+import numpy as np
 from settings import netgear_options, picam_config, text_config
+from camera_modes.motion_diff import motion_diff
 
 server = NetGear_Async(**netgear_options)
 
@@ -26,15 +27,34 @@ async def main():
         if frame is None:
             break
 
-        # 1. process frame to image and send
+        # 0. Process the frame to greyscale
+        processed_frame = cv2.cvtColor(frame, cv2.COLOR_YUV420p2GRAY)  #greyscale 
+
+        # 1. Gather pixel change
+        if prev is not None:
+            pixel_diffs = motion_diff(processed_frame=processed_frame, prev=prev)
+
+            # 2. Calculate the pixel difference ratio vs the total number of pixels
+            diff_ratio = round(np.sum(pixel_diffs) / np.product(pixel_diffs.shape), 2)
+
+
+        # process frame to image and send
         timestamp = time.strftime("%Y-%m-%d %X")
         img = cv2.cvtColor(frame, cv2.COLOR_YUV420p2RGB)
-        img = cv2.putText(img, timestamp, **text_config)
+        if prev is not None:
+            img = cv2.putText(img, str(diff_ratio), **text_config)
+        else:
+            img = cv2.putText(img, timestamp, **text_config)
+        
 
         # do some more stuff with the frame here
 
-        yield frame
-        # yield img
+        # yield frame
+        yield img
+        
+        # assign frame as prev
+        prev = processed_frame
+
         # sleep for sometime
         await asyncio.sleep(0)
 
@@ -58,53 +78,3 @@ if __name__ == "__main__":
         # finally close the server
         server.close()
 
-
-# def main():
-#     # always start with prev = None, so the first frame is never sent
-#     prev = None
-#     while True:
-#         try:
-#             frame = picam2.capture_array("lores")
-
-#             if frame is None:
-#                 break
-
-#             # 1. process frame to image and send
-#             timestamp = time.strftime("%Y-%m-%d %X")
-#             img = cv2.cvtColor(frame, cv2.COLOR_YUV420p2RGB)
-#             img = cv2.putText(img, timestamp, **text_config)
-#             server.send(img)
-
-#             # prev = processed_frame
-
-#             # server.send
-
-
-#             # cur = cur[:w*h].reshape(h, w)
-#             # if prev is not None:
-#             #     # Measure pixels differences between current and
-#             #     # previous frame
-                
-#             #     prepared_frame = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-
-#             #     mse = np.square(np.subtract(frame, prev)).mean()
-#             #     if mse > 7:
-#             #         request = picam2.capture_request()
-#             #         request.save("main", f"snaps/{str(datetime.now())}.jpg")
-#             #         request.release()
-#             #         print("Still image captured!")
-
-#             # prev = frame
-
-#         except KeyboardInterrupt:
-#             break
-
-#     # safely close video stream
-#     picam2.stop()
-#     # picam2.stop_recording()
-#     # safely close server
-#     server.close()
-
-
-# if __name__ == "__main__":
-#     main()
