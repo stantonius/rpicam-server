@@ -14,7 +14,8 @@ netgear_options = {
     "protocol": "tcp",
     "logging": True,
     "pattern": 1,
-    "source": None
+    "source": None,
+    "timeout": 10
 }
 
 # PICAM CONFIG

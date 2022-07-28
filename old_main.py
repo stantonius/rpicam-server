@@ -1,5 +1,3 @@
-# import required libraries
-from vidgear.gears import VideoGear
 from vidgear.gears.asyncio import NetGear_Async
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
@@ -8,14 +6,6 @@ import cv2, time, asyncio
 import numpy as np
 from settings import netgear_options, picam_config, text_config
 from camera_modes.motion_diff import motion_diff
-
-# activate jpeg encoding and specify other related parameters
-options = {
-    "jpeg_compression": True,
-    "jpeg_compression_quality": 90,
-    "jpeg_compression_fastdct": True,
-    "jpeg_compression_fastupsample": True,
-}
 
 server = NetGear_Async(**netgear_options)
 
@@ -57,34 +47,47 @@ async def main():
             img = cv2.putText(img, timestamp, **text_config)
         
 
-        # do some more stuff with the frame her
+        # do some more stuff with the frame here
+
+        # yield frame
+        yield img
         
         # assign frame as prev
         prev = processed_frame
 
+        # sleep for sometime
+        await asyncio.sleep(0)
 
-        # send frame to server
-        yield img
+
 
 if __name__ == "__main__":
     # set event loop
     asyncio.set_event_loop(server.loop)
     # Add your custom source generator to Server configuration
     server.config["generator"] = main()
+
     # Launch the Server
     server.launch()
-    try:
-        # run your main function task until it is complete
-        server.loop.run_until_complete(server.task)
-    except (KeyboardInterrupt, SystemExit):
-        # wait for interrupts
-        pass
-    finally:
-        # finally close the server
-        server.close()
 
-# safely close video stream
-picam2.stop()
+    # sleep time in seconds 
+    sleep = 0
 
-# safely close server
-server.close()
+    # while pt < 86400:
+    while True:
+        if sleep <10:
+            try:
+                a = server.loop.run_until_complete(server.task)  # type: ignore
+
+            except Exception as e:
+                print(e.args)
+                # wait for interrupts
+                print("This gets triggered when there is no client")
+                sleep+=2
+        else:
+            break
+
+
+    # close stream
+    picam2.stop()
+    # finally close the server
+    server.close(skip_loop=True)
