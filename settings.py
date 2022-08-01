@@ -1,39 +1,34 @@
 import os
 from dotenv import load_dotenv
 from picamera2 import Picamera2
+from picamera2.controls import Controls
 import libcamera
 import cv2
 
 load_dotenv()
 
-# NETGEAR CONFIG
-
-netgear_options = {
-    "address": os.environ["CLIENT_IP"],
-    "port": os.environ["CLIENT_PORT"],
-    "protocol": "tcp",
-    "logging": True,
-    "pattern": 1,
-    "source": None,
-    "timeout": 10
-}
-
-# PICAM CONFIG
 
 def picam_config(picam: Picamera2) -> dict:
-    lsize = (320, 240)
+    # lsize = (320, 240)
+    lsize = (720,480)
     half_resolution = [dim // 2 for dim in picam.sensor_resolution]
 
     return {
         "main": {"size": half_resolution, "format": "RGB888"},
         "lores": {"size": lsize, "format": "YUV420"},
-        "transform": libcamera.Transform(hflip=1, vflip=1),
+        "transform": libcamera.Transform(hflip=0, vflip=0),
         "encode": "lores",
-        "controls": {
-            # "FrameDurationLimits": (66666, 99999),
-            "AwbEnable": 0
-        }
     }
+
+def picam_controls(picam: Picamera2) -> None:
+    with picam.controls as ctrls:
+        # ctrls.Brightness = 0.5
+        # ctrls.Contrast = 1.5
+        # ctrls.AeConstraintMode = 2
+        # ctrls.FrameDurationLimits = (125000, 150000)
+        ctrls.AwbEnable = 1
+        # ctrls.AwbMode = 0
+        # ctrls.ExposureTime = 100000
 
 # Image text settings
 
@@ -44,15 +39,3 @@ text_config = {
     "fontScale": 1,
     "thickness": 2
 }
-
-
-# def apply_timestamp(request):
-#     # timestamp = time.strftime("%Y-%m-%d %X")
-#     timestamp="Hiiiiiiiiiiiiiiii"
-#     with MappedArray(request, "lores") as m:
-#         cv2.putText(m.array, timestamp, origin, font, scale, colour, thickness)
-
-# picam2.request_callback = apply_timestamp
-
-# setup for image stills
-# w, h = lsize

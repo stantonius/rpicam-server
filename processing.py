@@ -1,6 +1,6 @@
-import cv2
+import cv2, time
 import numpy as np
-from vidgear.gears import NetGear
+from settings import text_config
 
 def motion_diff(processed_frame: np.ndarray, prev: np.ndarray, threshold: int = 20):
     """
@@ -30,3 +30,32 @@ def motion_diff(processed_frame: np.ndarray, prev: np.ndarray, threshold: int = 
 
         # return cv2.cvtColor(thresh_frame, cv2.COLOR_GRAY2RGB)
         return thresh_frame
+
+
+
+def proc_frame(prev, frame) -> tuple:
+
+    # 0. Process the frame to greyscale
+    processed_frame = cv2.cvtColor(frame, cv2.COLOR_YUV420p2GRAY)  #greyscale
+
+    if prev is not None:
+        # 1. Gather pixel change
+        pixel_diffs = motion_diff(processed_frame=processed_frame, prev=prev)
+
+        # 2. Calculate the pixel difference ratio vs the total number of pixels
+        diff_ratio = round(np.sum(pixel_diffs) / np.product(pixel_diffs.shape), 2)
+
+
+    # process frame to image and send
+    timestamp = time.strftime("%Y-%m-%d %X")
+    img = cv2.cvtColor(frame, cv2.COLOR_YUV420p2RGB)
+    if prev is not None:
+        img = cv2.putText(img, str(diff_ratio), **text_config)
+    else:
+        img = cv2.putText(img, timestamp, **text_config)
+        
+
+    # do some more stuff with the frame here
+
+    # yield frame
+    return (processed_frame, img)
