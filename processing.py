@@ -34,6 +34,11 @@ def motion_diff(processed_frame: np.ndarray, prev: np.ndarray, threshold: int = 
 
 
 def proc_frame(prev, frame) -> tuple:
+    """
+    Converts frames into meaningful images and analyzes pixel differences
+
+    Returns a tuple of processed_frame and img
+    """
 
     # 0. Process the frame to greyscale
     processed_frame = cv2.cvtColor(frame, cv2.COLOR_YUV420p2GRAY)  #greyscale
@@ -54,8 +59,6 @@ def proc_frame(prev, frame) -> tuple:
     else:
         img = cv2.putText(img, timestamp, **text_config)
         
+    # can do more stuff with the frame here
 
-    # do some more stuff with the frame here
-
-    # yield frame
     return (processed_frame, img)

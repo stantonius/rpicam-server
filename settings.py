@@ -5,8 +5,6 @@ from picamera2.controls import Controls
 import libcamera
 import cv2
 
-load_dotenv()
-
 
 def picam_config(picam: Picamera2) -> dict:
     # lsize = (320, 240)
