@@ -13,7 +13,7 @@ GPIO.setmode(GPIO.BOARD)
 GPIO.setup(40, GPIO.OUT)
 
 # 0 is nightvision, 1 is daytime
-GPIO.output(40, 1)
+GPIO.output(40, 0)
 
 # camera setup
 picam2 = Picamera2()
@@ -23,8 +23,9 @@ picam2.configure(video_config)
 picam_controls(picam2)
 
 encoder = H264Encoder(10000000)
-output = FfmpegOutput('test.mp4')
+output = FfmpegOutput('output.mp4')
 picam2.start_recording(encoder, output)
+# sender = imagezmq.ImageSender(connect_to='tcp://192.168.99.97:5555')
 sender = imagezmq.ImageSender(connect_to='tcp://192.168.0.226:5555')
 rpi_name = socket.gethostname() # send RPi hostname with each image
 
